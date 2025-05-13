@@ -1,0 +1,10 @@
+# 忽略所有文件
+*
+
+# 只包含这些文件
+!index.html
+!dockerfile
+!browser-control-api.py
+!README.md
+!.gitignore 
+!requirements.txt

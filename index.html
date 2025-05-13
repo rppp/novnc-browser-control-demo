@@ -1,0 +1,241 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>自动浏览网页控制</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            margin: 0;
+            padding: 20px;
+            background-color: #f5f5f5;
+        }
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            background-color: white;
+            padding: 20px;
+            border-radius: 8px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+        }
+        h1 {
+            color: #333;
+            text-align: center;
+        }
+        .controls {
+            margin-bottom: 20px;
+            display: flex;
+            flex-wrap: wrap;
+            gap: 10px;
+            justify-content: center;
+            padding: 15px;
+            background-color: #f9f9f9;
+            border-radius: 5px;
+        }
+        .params {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 10px;
+            justify-content: center;
+            margin-top: 10px;
+            padding: 10px;
+            background-color: #f0f8ff;
+            border-radius: 5px;
+        }
+        button {
+            padding: 10px 15px;
+            background-color: #4CAF50;
+            color: white;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 14px;
+        }
+        button:hover {
+            background-color: #45a049;
+        }
+        button.stop {
+            background-color: #f44336;
+        }
+        button.stop:hover {
+            background-color: #d32f2f;
+        }
+        input {
+            padding: 10px;
+            border: 1px solid #ccc;
+            border-radius: 4px;
+            font-size: 14px;
+        }
+        input[type="number"] {
+            width: 80px;
+        }
+        #url-input {
+            width: 300px;
+        }
+        .vnc-container {
+            border: 1px solid #ccc;
+            margin: 20px 0;
+            height: 600px;
+            border-radius: 5px;
+            overflow: hidden;
+        }
+        #vnc-iframe {
+            width: 100%;
+            height: 100%;
+            border: none;
+        }
+        .status {
+            text-align: center;
+            padding: 10px;
+            background-color: #e9f7ef;
+            border-radius: 4px;
+            margin-bottom: 15px;
+        }
+        .status.connected {
+            background-color: #e9f7ef;
+            color: #27ae60;
+        }
+        .status.disconnected {
+            background-color: #fdedec;
+            color: #e74c3c;
+        }
+        label {
+            display: inline-block;
+            margin-right: 5px;
+            font-weight: bold;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>自动浏览网页控制 (只读模式)</h1>
+        
+        <div class="status" id="connection-status">
+            正在连接到远程服务器...
+        </div>
+        
+        <div class="controls">
+            <input id="url-input" type="text" placeholder="输入URL (例如：https://example.com)" value="https://www.baidu.com">
+            <button id="browse-btn">浏览网页并自动滚动</button>
+            <button id="stop-btn" class="stop">停止滚动</button>
+            
+            <div class="params">
+                <div>
+                    <label for="duration">持续时间 (秒):</label>
+                    <input id="duration" type="number" min="5" max="600" value="60">
+                </div>
+                <div>
+                    <label for="interval">滚动间隔 (秒):</label>
+                    <input id="interval" type="number" min="0.5" max="10" step="0.5" value="1.5">
+                </div>
+                <div>
+                    <label for="scroll-amount">滚动幅度:</label>
+                    <input id="scroll-amount" type="number" min="1" max="5" value="1">
+                </div>
+            </div>
+        </div>
+        
+        <div class="vnc-container">
+            <iframe id="vnc-iframe" src="http://localhost:6080/vnc.html?password=password123&autoconnect=true&resize=scale&quality=6&view_only=true" title="远程浏览器"></iframe>
+        </div>
+    </div>
+
+    <script>
+        // 服务器IP
+        const SERVER_IP = 'localhost';
+        const API_URL = `http://${SERVER_IP}:5000`;
+        
+        // 检查API服务器状态
+        async function checkApiStatus() {
+            try {
+                const response = await fetch(`${API_URL}/status`);
+                if (response.ok) {
+                    const data = await response.json();
+                    document.getElementById('connection-status').textContent = `已连接到远程服务器 (自动滚动: ${data.auto_scroll === 'running' ? '进行中' : '已停止'})`;
+                    document.getElementById('connection-status').classList.add('connected');
+                    return true;
+                }
+            } catch (error) {
+                console.error('API连接错误:', error);
+            }
+            
+            document.getElementById('connection-status').textContent = '无法连接到远程服务器 API';
+            document.getElementById('connection-status').classList.add('disconnected');
+            return false;
+        }
+        
+        // 打开网页并自动滚动
+        async function browseWebsite() {
+            const url = document.getElementById('url-input').value;
+            if (!url) {
+                alert('请输入有效的URL');
+                return;
+            }
+            
+            const duration = parseInt(document.getElementById('duration').value) || 60;
+            const interval = parseFloat(document.getElementById('interval').value) || 1.5;
+            const scrollAmount = parseInt(document.getElementById('scroll-amount').value) || 1;
+            
+            try {
+                // 构建查询参数
+                const queryParams = new URLSearchParams({
+                    url: url,
+                    duration: duration.toString(),
+                    interval: interval.toString(),
+                    scroll_amount: scrollAmount.toString(),
+                      return_html: 'true'
+                }).toString();
+                
+                const response = await fetch(`${API_URL}/scroll?${queryParams}`, {
+                    method: 'GET'
+                });
+                
+                const data = await response.json();
+                if (data.success) {
+                    alert(data.message);
+                    // 更新状态
+                    setTimeout(checkApiStatus, 1000);
+                } else {
+                    alert(`错误: ${data.error}`);
+                }
+            } catch (error) {
+                console.error('API请求错误:', error);
+                alert('无法连接到远程API服务器，请检查网络连接和服务器状态');
+            }
+        }
+        
+        // 停止自动滚动
+        async function stopScrolling() {
+            try {
+                const response = await fetch(`${API_URL}/stop-scroll`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({})
+                });
+                
+                const data = await response.json();
+                alert(data.message);
+                // 更新状态
+                setTimeout(checkApiStatus, 1000);
+            } catch (error) {
+                console.error('API请求错误:', error);
+                alert('无法连接到远程API服务器，请检查网络连接和服务器状态');
+            }
+        }
+        
+        // 事件监听
+        document.getElementById('browse-btn').addEventListener('click', browseWebsite);
+        document.getElementById('stop-btn').addEventListener('click', stopScrolling);
+        
+        // 启动时检查API状态
+        window.addEventListener('DOMContentLoaded', () => {
+            checkApiStatus();
+            // 定期检查状态
+            setInterval(checkApiStatus, 5000);
+        });
+    </script>
+</body>
+</html>
