@@ -137,13 +137,13 @@
         </div>
         
         <div class="vnc-container">
-            <iframe id="vnc-iframe" src="http://8.141.31.12:6080/vnc.html?password=password123&autoconnect=true&resize=scale&quality=6&view_only=true" title="远程浏览器"></iframe>
+            <iframe id="vnc-iframe" src="http://localhost:6080/vnc.html?password=password123&autoconnect=true&resize=scale&quality=6&view_only=true" title="远程浏览器"></iframe>
         </div>
     </div>
 
     <script>
         // 服务器IP
-        const SERVER_IP = '8.141.31.12';
+        const SERVER_IP = 'localhost';
         const API_URL = `http://${SERVER_IP}:5000`;
         
         // 检查API服务器状态
