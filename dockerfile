@@ -78,7 +78,7 @@ RUN echo '#!/bin/bash\necho "Firefox服务启动，等待API指令..."\nsleep in
 RUN echo "[supervisord]\nnodaemon=true\n\n\
 [program:xvfb]\ncommand=/usr/bin/Xvfb :1 -screen 0 1920x1080x24\nautorestart=true\n\n\
 [program:xfce]\ncommand=/usr/bin/startxfce4\nenvironment=DISPLAY=:1\nautorestart=true\n\n\
-[program:x11vnc]\ncommand=/usr/bin/x11vnc -forever -usepw -shared -rfbport 5900 -display :1\nautorestart=true\n\n\
+[program:x11vnc]\ncommand=/usr/bin/x11vnc -forever -nopw -shared -rfbport 5900 -display :1\nautorestart=true\n\n\
 [program:novnc]\ncommand=/usr/share/novnc/utils/launch.sh --vnc localhost:5900 --listen 6080\nautorestart=true\n\n\
 [program:firefox-setup]\ncommand=bash -c 'mkdir -p /root/.mozilla && sleep 5'\nstartsecs=0\nautorestart=false\n\n\
 [program:firefox]\ncommand=/app/start-firefox.sh\nenvironment=DISPLAY=:1\nautorestart=true\n\n\
